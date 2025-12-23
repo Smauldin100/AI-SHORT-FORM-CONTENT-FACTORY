@@ -181,16 +181,50 @@ def main():
     if len(sys.argv) > 1:
         topics = sys.argv[1:]
     else:
-        raw = input("Enter topics (comma separated): ")
+        raw = input("Enter topics (comma separated, or 'quit' to exit): ")
         topics = [t.strip() for t in raw.split(",") if t.strip()]
+    
     if not topics:
         print("No topics provided.")
         return
+    
+    if topics == ["quit"]:
+        print("Exiting.")
+        return
+    
     results = []
-    for t in topics:
-        r = run_once(t)
-        results.append(r)
-    print("Done. Saved records to:", DATA_FILE)
+    for i, t in enumerate(topics, 1):
+        try:
+            print(f"\n[{i}/{len(topics)}] Generating video for: {t}")
+            r = run_once(t)
+            results.append(r)
+            print(f"✓ Success: {r['title']}")
+        except Exception as e:
+            print(f"✗ Failed: {t} - {e}")
+            results.append({"title": t, "error": str(e)})
+    
+    print(f"\nDone. Saved {len(results)} record(s) to: {DATA_FILE}")
+    
+    # Prompt to repeat if loop mode
+    while True:
+        again = input("\nGenerate more videos? (yes/no): ").strip().lower()
+        if again in ["yes", "y"]:
+            raw = input("Enter topics (comma separated, or 'quit' to exit): ")
+            new_topics = [t.strip() for t in raw.split(",") if t.strip()]
+            if new_topics == ["quit"]:
+                break
+            for i, t in enumerate(new_topics, 1):
+                try:
+                    print(f"\nGenerating video for: {t}")
+                    r = run_once(t)
+                    results.append(r)
+                    print(f"✓ Success: {r['title']}")
+                except Exception as e:
+                    print(f"✗ Failed: {t} - {e}")
+        else:
+            break
+    
+    print("Agent finished.")
 
 
 if __name__ == "__main__":
