@@ -99,3 +99,32 @@ Local Record Format
   "created_at": 1703369600
 }
 ```
+
+Dashboard
+
+### Option 1: Static HTML Dashboard (No Backend)
+Open `dashboard.html` in your browser directly:
+- Double-click the file or right-click → Open with Browser
+- Shows all videos with search, filter, and stats
+- Auto-refreshes every 30 seconds
+
+### Option 2: Flask Web Dashboard (Interactive + API)
+```bash
+pip install Flask
+python app.py
+```
+Then visit: http://localhost:5000
+
+**Features:**
+- 📊 Real-time analytics and charts
+- ✏️ Mark videos as posted
+- ⬇️ Export data
+- 🔄 Auto-refresh
+- 📱 Responsive mobile design
+
+### Dashboard API Endpoints
+- `GET /api/videos` — List all videos
+- `GET /api/stats` — Get dashboard stats
+- `PATCH /api/videos/<id>/posted` — Mark as posted
+- `DELETE /api/videos/<id>` — Delete video
+- `GET /api/export` — Export all data
