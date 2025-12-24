@@ -353,6 +353,18 @@
                 updateChart();
             } catch (error) {
                 console.error('Error loading videos:', error);
+                // Show user-friendly message
+                const container = document.getElementById('videos-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <h2>Unable to Connect to API</h2>
+                            <p>Make sure the Flask server is running:</p>
+                            <p style="margin-top: 15px; font-family: monospace;">python app.py</p>
+                            <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.7;">Then refresh this page</p>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -374,13 +386,16 @@
             const drafts = allVideos.filter(v => !v.posted && v.status === 'Generated').length;
             const failed = allVideos.filter(v => v.status === 'Failed').length;
 
-            const ctx = document.getElementById('statusChart').getContext('2d');
+            const ctx = document.getElementById('statusChart');
+            if (!ctx) return;
+            
+            const chartContext = ctx.getContext('2d');
             
             if (statusChart) {
                 statusChart.destroy();
             }
 
-            statusChart = new Chart(ctx, {
+            statusChart = new Chart(chartContext, {
                 type: 'doughnut',
                 data: {
                     labels: ['Posted', 'Drafts', 'Failed'],
@@ -419,6 +434,8 @@
 
             const container = document.getElementById('videos-container');
             
+            if (!container) return;
+
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
@@ -444,7 +461,7 @@
                         </div>
 
                         <div class="video-actions">
-                            ${video.video_url ? `
+                            ${video.video_url && video.video_url !== '#' ? `
                                 <a href="${video.video_url}" target="_blank" class="btn-small btn-watch">
                                     ▶️ Watch
                                 </a>
@@ -479,19 +496,26 @@
         }
 
         async function exportJSON() {
-            const response = await fetch('/api/export');
-            const data = await response.json();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `videos-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
+            try {
+                const response = await fetch('/api/export');
+                const data = await response.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `videos-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            } catch (error) {
+                console.error('Error exporting:', error);
+                alert('Failed to export data');
+            }
         }
 
         // Event listeners
-        document.getElementById('search-input').addEventListener('input', renderDashboard);
-        document.getElementById('filter-status').addEventListener('change', renderDashboard);
+        const searchInput = document.getElementById('search-input');
+        const filterStatus = document.getElementById('filter-status');
+        if (searchInput) searchInput.addEventListener('input', renderDashboard);
+        if (filterStatus) filterStatus.addEventListener('change', renderDashboard);
 
         // Load on startup
         loadVideos();

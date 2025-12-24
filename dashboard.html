@@ -13,7 +13,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0f1419;
+            color: #e0e0e0;
             min-height: 100vh;
             padding: 20px;
         }
@@ -331,21 +332,34 @@
 
         async function loadVideos() {
             try {
-                const response = await fetch('./data/videos.json');
-                if (!response.ok) {
-                    throw new Error('Could not load videos.json');
+                // Try multiple paths
+                const paths = [
+                    './data/videos.json',
+                    '../data/videos.json',
+                    '/data/videos.json'
+                ];
+
+                for (let path of paths) {
+                    try {
+                        const response = await fetch(path);
+                        if (response.ok) {
+                            allVideos = await response.json();
+                            renderDashboard();
+                            return;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
                 }
-                allVideos = await response.json();
+
+                // If no files found, use demo data
+                allVideos = [];
                 renderDashboard();
             } catch (error) {
                 console.error('Error loading videos:', error);
-                document.getElementById('videos-container').innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <h2>⚠️ Error Loading Data</h2>
-                        <p>${error.message}</p>
-                        <p style="margin-top: 10px; opacity: 0.7;">Make sure data/videos.json exists in the project folder.</p>
-                    </div>
-                `;
+                // Use empty array as fallback
+                allVideos = [];
+                renderDashboard();
             }
         }
 
@@ -379,7 +393,8 @@
                 container.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
                         <h2>😕 No videos found</h2>
-                        <p>Try adjusting your search or filters.</p>
+                        <p>Run the Python agent to generate videos.</p>
+                        <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.7;">After running the agent, refresh this page to see videos.</p>
                     </div>
                 `;
                 return;
@@ -402,7 +417,7 @@
                         </div>
 
                         <div class="video-actions">
-                            ${video.video_url ? `
+                            ${video.video_url && video.video_url !== '#' ? `
                                 <a href="${video.video_url}" target="_blank" class="btn-small btn-watch">
                                     ▶️ Watch Video
                                 </a>
@@ -411,7 +426,7 @@
                                     No Video
                                 </button>
                             `}
-                            ${video.audio_path ? `
+                            ${video.audio_path && video.audio_path !== '#' ? `
                                 <a href="${video.audio_path}" download class="btn-small btn-watch">
                                     🎵 Download Audio
                                 </a>
@@ -431,6 +446,10 @@
         }
 
         function downloadJSON() {
+            if (allVideos.length === 0) {
+                alert('No videos to export yet.');
+                return;
+            }
             const dataStr = JSON.stringify(allVideos, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
